@@ -1,28 +1,23 @@
-# WhatJDK
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-Find out what JDK compatibility a Jar has, even one with embedded Jars!
+    <parent>
+        <groupId>com.nthalk</groupId>
+        <artifactId>whatjdk-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
 
-## Usage
-
-    ./whatjdk/whatjdk some.war
-    some.war:WEB-INF/lib/xml-apis-1.4.01.jar contains classes compatible with Java1.1
-    some.war contains classes compatible with Java1.6
-
-## Requirements
-
-Java Runtime and Maven if you plan on building the jar (probable)
-
-## Maven Plugin
+    <artifactId>whatjdk-example</artifactId>
 
     <build>
         <plugins>
-            ...
             <plugin>
                 <groupId>com.nthalk</groupId>
                 <artifactId>whatjdk-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <configuration>
-                    <allowedJdkVersions>Java1.4,Java1.5,Java1.6</allowedJdkVersions>
+                    <allowedJdkVersions>Java1.6</allowedJdkVersions>
                 </configuration>
                 <executions>
                     <execution>
@@ -32,6 +27,6 @@ Java Runtime and Maven if you plan on building the jar (probable)
                     </execution>
                 </executions>
             </plugin>
-            ...
         </plugins>
     </build>
+</project>

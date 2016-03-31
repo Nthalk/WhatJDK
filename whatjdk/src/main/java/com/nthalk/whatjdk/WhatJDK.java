@@ -11,7 +11,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class WhatJDK {
-
     private static final String doc =
         "whatjdk\n"
             + "\n"
@@ -25,57 +24,36 @@ public class WhatJDK {
             + "  -v --version       Show version.\n"
             + "\n";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Map<String, Object> opts = new Docopt(doc)
             .withVersion("1.0-SNAPSHOT")
             .parse(args);
+
+        WhatJDK whatJDK = new WhatJDK();
 
         @SuppressWarnings("unchecked")
         List<String> jarfiles = (List<String>) opts.get("JARFILE");
         if (jarfiles != null) {
             for (String fileName : jarfiles) {
-                checkFileExtensionCompatibility(fileName);
-                extractClassVersionInfoForJar(fileName);
+                whatJDK.checkFileExtensionCompatibility(fileName);
+                whatJDK.extractClassVersionInfoForJar(fileName, new Handler() {
+                    public void handle(String fileName, Set<String> versions) {
+                        StringBuilder versionsString = new StringBuilder();
+                        for (String version : versions) {
+                            versionsString.append(version);
+                            versionsString.append(", ");
+                        }
+                        System.out.println(fileName + " contains classes compatible with " + versionsString.substring(0, versionsString.length() - 2));
+                    }
+                });
             }
             System.exit(0);
         }
     }
 
-    private static void extractClassVersionInfoForJar(String fileName) {
-        try {
-            FileInputStream fileInputStream = new FileInputStream(fileName);
-            extractInternalClassOrLibVersion(fileName, fileInputStream);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void extractInternalClassOrLibVersion(String fileName, InputStream fileInputStream) throws IOException {
-        ZipInputStream zipInputStream = new ZipInputStream(fileInputStream);
-        ZipEntry entry;
-        Set<String> versions = new HashSet<String>();
-        while ((entry = zipInputStream.getNextEntry()) != null) {
-            if (entry.getName().endsWith(".class")) {
-                extractClassVersionInfo(fileName + ":" + entry.getName(), zipInputStream, versions);
-            } else if (entry.getName().endsWith(".jar")) {
-                extractInternalClassOrLibVersion(fileName + ":" + entry.getName(), zipInputStream);
-            }
-        }
-        if (!versions.isEmpty()) {
-            StringBuilder versionsString = new StringBuilder();
-            for (String version : versions) {
-                versionsString.append(version);
-                versionsString.append(", ");
-            }
-            System.out.println(fileName + " contains classes compatible with " + versionsString.substring(0, versionsString.length() - 2));
-        }
-    }
-
-    private static void extractClassVersionInfo(String fileName,
-                                                ZipInputStream zipInputStream,
-                                                Set<String> versions) throws IOException {
+    private void extractClassVersionInfo(String fileName,
+                                         ZipInputStream zipInputStream,
+                                         Set<String> versions) throws IOException {
         DataInputStream data = new DataInputStream(zipInputStream);
         if (0xCAFEBABE != data.readInt()) {
             System.err.println("Corrupt class file: " + fileName);
@@ -113,7 +91,29 @@ public class WhatJDK {
         }
     }
 
-    public static File checkFileExtensionCompatibility(String fileName) {
+    private void extractInternalClassOrLibVersion(String fileName, InputStream fileInputStream, Handler handler) throws IOException {
+        ZipInputStream zipInputStream = new ZipInputStream(fileInputStream);
+        ZipEntry entry;
+        Set<String> versions = new HashSet<String>();
+        while ((entry = zipInputStream.getNextEntry()) != null) {
+            if (entry.getName().endsWith(".class")) {
+                extractClassVersionInfo(fileName + ":" + entry.getName(), zipInputStream, versions);
+            } else if (entry.getName().endsWith(".jar")) {
+                extractInternalClassOrLibVersion(fileName + ":" + entry.getName(), zipInputStream, handler);
+            }
+        }
+        if (!versions.isEmpty()) {
+            handler.handle(fileName, versions);
+        }
+    }
+
+    public void extractClassVersionInfoForJar(String fileName, Handler handler) throws Exception {
+        FileInputStream fileInputStream = new FileInputStream(fileName);
+        extractInternalClassOrLibVersion(fileName, fileInputStream, handler);
+        handler.onFinish();
+    }
+
+    public File checkFileExtensionCompatibility(String fileName) {
         File file = new File(fileName);
         if (!file.exists()) {
             System.err.println("File does not exist: " + fileName);
@@ -126,5 +126,12 @@ public class WhatJDK {
         }
 
         return file;
+    }
+
+    public static abstract class Handler {
+        public abstract void handle(String fileName, Set<String> versions);
+
+        public void onFinish() throws Exception {
+        }
     }
 }

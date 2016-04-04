@@ -18,7 +18,7 @@ Java Runtime and Maven if you plan on building the jar (probable)
         <plugins>
             ...
             <plugin>
-                <groupId>com.nthalk</groupId>
+                <groupId>com.iodesystems</groupId>
                 <artifactId>whatjdk-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <configuration>

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.nthalk</groupId>
+        <groupId>com.iodesystems</groupId>
         <artifactId>whatjdk-parent</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
@@ -13,7 +13,7 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>com.nthalk</groupId>
+                <groupId>com.iodesystems</groupId>
                 <artifactId>whatjdk-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <configuration>

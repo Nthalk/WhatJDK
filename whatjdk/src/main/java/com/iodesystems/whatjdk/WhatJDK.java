@@ -1,4 +1,4 @@
-package com.nthalk.whatjdk;
+package com.iodesystems.whatjdk;
 
 import org.docopt.Docopt;
 

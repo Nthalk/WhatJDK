@@ -1,6 +1,6 @@
-package com.nthalk.whatjdk.maven;
+package com.iodesystems.whatjdk.maven;
 
-import com.nthalk.whatjdk.WhatJDK;
+import com.iodesystems.whatjdk.WhatJDK;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;

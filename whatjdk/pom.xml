@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.nthalk</groupId>
+        <groupId>com.iodesystems</groupId>
         <artifactId>whatjdk-parent</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
@@ -25,7 +25,7 @@
                             <finalName>whatjdk</finalName>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.nthalk.whatjdk.WhatJDK</mainClass>
+                                    <mainClass>com.iodesystems.whatjdk.WhatJDK</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.nthalk</groupId>
+        <groupId>com.iodesystems</groupId>
         <artifactId>whatjdk-parent</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
@@ -13,7 +13,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.nthalk</groupId>
+            <groupId>com.iodesystems</groupId>
             <artifactId>whatjdk</artifactId>
             <version>${project.version}</version>
         </dependency>

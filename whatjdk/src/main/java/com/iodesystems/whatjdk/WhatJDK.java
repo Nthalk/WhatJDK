@@ -46,6 +46,7 @@ public class WhatJDK {
             System.out.println(classEntry.getContainer() + ": " + classEntry.getFileName() + " uses class: " + name);
         }
     };
+    private boolean scanInnerJarFiles;
 
     public static void main(String[] args) throws Exception {
         Map<String, Object> opts = new Docopt(doc)
@@ -122,12 +123,12 @@ public class WhatJDK {
         return success;
     }
 
-    private static Iterable<ClassEntry> getClassEntries(List<String> jarfiles) {
+    private Iterable<ClassEntry> getClassEntries(List<String> jarfiles) {
         return Fn.flatten(Fn.of(jarfiles).convert(new From<String, Iterable<ClassEntry>>() {
             @Override
             public Iterable<ClassEntry> from(String s) {
                 try {
-                    return Fn.of(new ClassEntryExtractor(s)).takeWhile(new Condition<ClassEntry>() {
+                    return Fn.of(new ClassEntryExtractor(s, scanInnerJarFiles)).takeWhile(new Condition<ClassEntry>() {
                         @Override
                         public boolean is(ClassEntry classEntry) {
                             return classEntry != null;
@@ -171,5 +172,13 @@ public class WhatJDK {
 
     public boolean getSuccess() {
         return success;
+    }
+
+    public void setScanInnerJarFiles(boolean scanInnerJarFiles) {
+        this.scanInnerJarFiles = scanInnerJarFiles;
+    }
+
+    public boolean isScanInnerJarFiles() {
+        return scanInnerJarFiles;
     }
 }

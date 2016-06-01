@@ -5,6 +5,7 @@ import com.iodesystems.whatjdk.JdkVersion;
 import com.iodesystems.whatjdk.WhatJDK;
 import com.iodesystems.whatjdk.listeners.OnClassReferenceListener;
 import com.iodesystems.whatjdk.listeners.OnJdkVersionListener;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -12,7 +13,8 @@ import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 @Mojo(
     name = "verify",
@@ -38,9 +40,14 @@ public class Plugin extends AbstractMojo {
             throw new MojoExecutionException("Cannot verify before the package has been built");
         }
 
-        String fileName = file.getAbsolutePath();
+        List<String> jarFiles = new ArrayList<String>();
+        jarFiles.add(file.getAbsolutePath());
+        for (Artifact artifact : project.getDependencyArtifacts()) {
+            jarFiles.add(artifact.getFile().getAbsolutePath());
+        }
 
-        whatJDK.setJarFiles(Collections.singletonList(fileName));
+        whatJDK.setJarFiles(jarFiles);
+        whatJDK.setScanInnerJarFiles(false);
         whatJDK.setUsesClasses(WhatJDK.parseUsesClass(usesClasses));
         whatJDK.setMaxJdkVersion(JdkVersion.parse(maxJdkVersion));
         whatJDK.setOnClassReferenceListener(new OnClassReferenceListener() {

@@ -12,11 +12,13 @@ import java.util.zip.ZipInputStream;
 class ClassEntryExtractor implements Generator<ClassEntry> {
 
     private final String fileName;
+    private final boolean scanInnerJarFiles;
     private ClassEntryExtractor delegate = null;
     private final ZipInputStream zipInputStream;
 
-    public ClassEntryExtractor(String fileName) throws FileNotFoundException {
+    public ClassEntryExtractor(String fileName, boolean scanInnerJarFiles) throws FileNotFoundException {
         this.fileName = fileName;
+        this.scanInnerJarFiles = scanInnerJarFiles;
         FileInputStream fileInputStream = new FileInputStream(fileName);
         zipInputStream = new ZipInputStream(fileInputStream);
     }
@@ -24,6 +26,7 @@ class ClassEntryExtractor implements Generator<ClassEntry> {
     public ClassEntryExtractor(String fileName, ZipInputStream zipInputStream) throws FileNotFoundException {
         this.fileName = fileName;
         this.zipInputStream = zipInputStream;
+        this.scanInnerJarFiles = true;
     }
 
     @Override
@@ -42,7 +45,7 @@ class ClassEntryExtractor implements Generator<ClassEntry> {
             while ((entry = zipInputStream.getNextEntry()) != null) {
                 if (entry.getName().endsWith(".class")) {
                     return new ClassEntry(fileName, entry.getName(), new ClassReader(zipInputStream));
-                } else if (entry.getName().endsWith(".jar")) {
+                } else if (scanInnerJarFiles && entry.getName().endsWith(".jar")) {
                     delegate = new ClassEntryExtractor(fileName + ":" + entry.getName(), new ZipInputStream(zipInputStream));
                     next = delegate.next();
                     if (next != null) {

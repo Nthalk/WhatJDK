@@ -1,6 +1,10 @@
 package com.iodesystems.whatjdk.maven;
 
+import com.iodesystems.whatjdk.ClassEntry;
+import com.iodesystems.whatjdk.JdkVersion;
 import com.iodesystems.whatjdk.WhatJDK;
+import com.iodesystems.whatjdk.listeners.OnClassReferenceListener;
+import com.iodesystems.whatjdk.listeners.OnJdkVersionListener;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -8,62 +12,54 @@ import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.Collections;
 
 @Mojo(
     name = "verify",
     defaultPhase = LifecyclePhase.PACKAGE,
-    requiresProject = true,
     requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,
     threadSafe = true)
 public class Plugin extends AbstractMojo {
 
     @Component
-    protected MavenProject project;
+    private MavenProject project;
 
-    @Parameter(required = true)
-    private String allowedJdkVersions;
+    @Parameter
+    private String maxJdkVersion;
+
+    @Parameter
+    private String usesClasses;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         WhatJDK whatJDK = new WhatJDK();
 
-        final Set<String> allowedVersionsSet = new HashSet<String>();
-        for (String allowedVersion : allowedJdkVersions.split(",")) {
-            allowedVersionsSet.add(allowedVersion.trim());
-        }
-
-
         final File file = project.getArtifact().getFile();
-        String fileName = file.getAbsolutePath();
-        whatJDK.checkFileExtensionCompatibility(fileName);
-        try {
-            whatJDK.extractClassVersionInfoForJar(fileName, new WhatJDK.Handler() {
-                Map<String, Set<String>> violations = new HashMap<String, Set<String>>();
-
-                public void handle(String fileName, Set<String> versions) {
-                    for (String version : versions) {
-                        if (!allowedVersionsSet.contains(version)) {
-                            violations.put(fileName, versions);
-                            getLog().error(fileName + " contains classes compiled with the following JDK " + versions);
-                            break;
-                        }
-                    }
-                }
-
-                @Override
-                public void onFinish() throws Exception {
-                    if (!violations.isEmpty()) {
-                        throw new MojoFailureException("UallowedJdkVersions found.");
-                    }
-                }
-            });
-        } catch (MojoFailureException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new MojoExecutionException("Error running WhatJDK", e);
+        if (file == null) {
+            throw new MojoExecutionException("Cannot verify before the package has been built");
         }
+
+        String fileName = file.getAbsolutePath();
+
+        whatJDK.setJarFiles(Collections.singletonList(fileName));
+        whatJDK.setUsesClasses(WhatJDK.parseUsesClass(usesClasses));
+        whatJDK.setMaxJdkVersion(JdkVersion.parse(maxJdkVersion));
+        whatJDK.setOnClassReferenceListener(new OnClassReferenceListener() {
+            @Override
+            public void onClassReferenced(ClassEntry classEntry, String name) {
+                getLog().error(classEntry.getContainer() + ":" + classEntry.getFileName() + " contains classes with references to a blacklisted class: " + name);
+            }
+        });
+
+        whatJDK.setOnInvalidJdkVersionListener(new OnJdkVersionListener() {
+            @Override
+            public void onJdkVersion(ClassEntry classEntry, int version) {
+                getLog().error(classEntry.getContainer() + ":" + classEntry.getFileName() + " is compiled with an invalid JDK: " + JdkVersion.parse(version).toString());
+            }
+        });
+
+        if (!whatJDK.execute()) {
+            throw new MojoExecutionException("Package violates configured whatJDK specification");
+        }
+
     }
 }

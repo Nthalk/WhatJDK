@@ -1,137 +1,175 @@
 package com.iodesystems.whatjdk;
 
+import com.iodesystems.fn.Fn;
+import com.iodesystems.fn.data.From;
+import com.iodesystems.fn.logic.Condition;
+import com.iodesystems.whatjdk.listeners.OnClassReferenceListener;
+import com.iodesystems.whatjdk.listeners.OnJdkVersionListener;
 import org.docopt.Docopt;
 
-import java.io.*;
-import java.util.HashSet;
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public class WhatJDK {
+
+
     private static final String doc =
         "whatjdk\n"
             + "\n"
             + "Usage:\n"
-            + "  whatjdk [JARFILE...]\n"
+            + "  whatjdk [JARFILE...] [--max-jdk=jdk] [--uses-class=<class>]\n"
             + "  whatjdk (-h | --help)\n"
             + "  whatjdk (-v | --version)\n"
             + "\n"
             + "Options:\n"
-            + "  -h --help          Show this screen.\n"
-            + "  -v --version       Show version.\n"
+            + "  --uses-class=<class>   Limit results to classes that reference this class.\n"
+            + "  --max-jdk-=<jdk>       Limit results to classes that use this version.\n"
+            + "  -h --help              Show this screen.\n"
+            + "  -v --version           Show version.\n"
             + "\n";
+    private List<String> jarFiles;
+    private JdkVersion maxJdkVersion;
+    private String[] usesClasses;
+    boolean success = true;
+
+    private OnJdkVersionListener onInvalidJdkVersionListener = new OnJdkVersionListener() {
+        @Override
+        public void onJdkVersion(ClassEntry classEntry, int version) {
+            System.out.println(classEntry.getContainer() + ": " + classEntry.getFileName() + " is using java version: " + JdkVersion.parse(version));
+        }
+    };
+
+    private OnClassReferenceListener onClassReferenceListener = new OnClassReferenceListener() {
+        @Override
+        public void onClassReferenced(ClassEntry classEntry, String name) {
+            System.out.println(classEntry.getContainer() + ": " + classEntry.getFileName() + " uses class: " + name);
+        }
+    };
 
     public static void main(String[] args) throws Exception {
         Map<String, Object> opts = new Docopt(doc)
             .withVersion("1.0-SNAPSHOT")
             .parse(args);
 
-        WhatJDK whatJDK = new WhatJDK();
+        final WhatJDK whatJDK = new WhatJDK();
 
         @SuppressWarnings("unchecked")
         List<String> jarfiles = (List<String>) opts.get("JARFILE");
-        if (jarfiles != null) {
-            for (String fileName : jarfiles) {
-                whatJDK.checkFileExtensionCompatibility(fileName);
-                whatJDK.extractClassVersionInfoForJar(fileName, new Handler() {
-                    public void handle(String fileName, Set<String> versions) {
-                        StringBuilder versionsString = new StringBuilder();
-                        for (String version : versions) {
-                            versionsString.append(version);
-                            versionsString.append(", ");
-                        }
-                        System.out.println(fileName + " contains classes compatible with " + versionsString.substring(0, versionsString.length() - 2));
-                    }
-                });
-            }
+        whatJDK.setJarFiles(jarfiles);
+        whatJDK.setMaxJdkVersion(JdkVersion.parse(opts.get("--max-jdk")));
+        whatJDK.setUsesClasses(parseUsesClass(opts.get("--uses-class")));
+        if (whatJDK.execute()) {
+            System.exit(-1);
+        } else {
             System.exit(0);
         }
+
     }
 
-    private void extractClassVersionInfo(String fileName,
-                                         ZipInputStream zipInputStream,
-                                         Set<String> versions) throws IOException {
-        DataInputStream data = new DataInputStream(zipInputStream);
-        if (0xCAFEBABE != data.readInt()) {
-            System.err.println("Corrupt class file: " + fileName);
-            return;
+    public static String[] parseUsesClass(Object o) {
+        if (o == null) return null;
+
+        int i = 0;
+        String[] strings = o.toString().split(",");
+        for (String s : strings) {
+            strings[i] = "L" + s.replace('.', '/') + ";";
+            i++;
         }
-        int minor = data.readUnsignedShort();
-        int major = data.readUnsignedShort();
-        switch (major) {
-            case 45:
-                versions.add("Java1.1");
-                break;
-            case 46:
-                versions.add("Java1.2");
-                break;
-            case 47:
-                versions.add("Java1.3");
-                break;
-            case 48:
-                versions.add("Java1.4");
-                break;
-            case 49:
-                versions.add("Java1.5");
-                break;
-            case 50:
-                versions.add("Java1.6");
-                break;
-            case 51:
-                versions.add("Java1.7");
-                break;
-            case 52:
-                versions.add("Java1.8");
-                break;
-            default:
-                versions.add(major + "." + minor);
-        }
+
+        return strings;
     }
 
-    private void extractInternalClassOrLibVersion(String fileName, InputStream fileInputStream, Handler handler) throws IOException {
-        ZipInputStream zipInputStream = new ZipInputStream(fileInputStream);
-        ZipEntry entry;
-        Set<String> versions = new HashSet<String>();
-        while ((entry = zipInputStream.getNextEntry()) != null) {
-            if (entry.getName().endsWith(".class")) {
-                extractClassVersionInfo(fileName + ":" + entry.getName(), zipInputStream, versions);
-            } else if (entry.getName().endsWith(".jar")) {
-                extractInternalClassOrLibVersion(fileName + ":" + entry.getName(), zipInputStream, handler);
+    public boolean execute() {
+        WhatJDKClassVisitor classVisitor = new WhatJDKClassVisitor();
+
+        if (getUsesClasses() != null) {
+            classVisitor.setOnClassReferenceListener(new OnClassReferenceListener() {
+                @Override
+                public void onClassReferenced(ClassEntry classEntry, String name) {
+                    String fixedName;
+                    if (name.charAt(name.length() - 1) != ';') {
+                        fixedName = "L" + name + ";";
+                    } else {
+                        fixedName = name;
+                    }
+
+                    for (String usesClass : usesClasses) {
+                        if (fixedName.contains(usesClass)) {
+                            success = false;
+                            onClassReferenceListener.onClassReferenced(classEntry, name);
+                        }
+                    }
+                }
+            });
+        }
+
+        if (getMaxJdkVersion() != null) {
+            classVisitor.setOnJdkVersionListener(new OnJdkVersionListener() {
+                @Override
+                public void onJdkVersion(ClassEntry classEntry, int version) {
+                    if (JdkVersion.parse(version).getOrder() > getMaxJdkVersion().getOrder()) {
+                        success = false;
+                        onInvalidJdkVersionListener.onJdkVersion(classEntry, version);
+                    }
+                }
+            });
+        }
+        for (ClassEntry classEntry : getClassEntries(jarFiles)) {
+            classVisitor.check(classEntry);
+        }
+
+        return success;
+    }
+
+    private static Iterable<ClassEntry> getClassEntries(List<String> jarfiles) {
+        return Fn.flatten(Fn.of(jarfiles).convert(new From<String, Iterable<ClassEntry>>() {
+            @Override
+            public Iterable<ClassEntry> from(String s) {
+                try {
+                    return Fn.of(new ClassEntryExtractor(s)).takeWhile(new Condition<ClassEntry>() {
+                        @Override
+                        public boolean is(ClassEntry classEntry) {
+                            return classEntry != null;
+                        }
+                    });
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
-        if (!versions.isEmpty()) {
-            handler.handle(fileName, versions);
-        }
+        }));
     }
 
-    public void extractClassVersionInfoForJar(String fileName, Handler handler) throws Exception {
-        FileInputStream fileInputStream = new FileInputStream(fileName);
-        extractInternalClassOrLibVersion(fileName, fileInputStream, handler);
-        handler.onFinish();
+
+    public void setJarFiles(List<String> jarFiles) {
+        this.jarFiles = jarFiles;
     }
 
-    public File checkFileExtensionCompatibility(String fileName) {
-        File file = new File(fileName);
-        if (!file.exists()) {
-            System.err.println("File does not exist: " + fileName);
-            System.exit(-1);
-        }
-
-        if (!file.isFile()) {
-            System.err.println("Is not a file: " + fileName);
-            System.exit(-1);
-        }
-
-        return file;
+    public void setMaxJdkVersion(JdkVersion maxJdkVersion) {
+        this.maxJdkVersion = maxJdkVersion;
     }
 
-    public static abstract class Handler {
-        public abstract void handle(String fileName, Set<String> versions);
+    public JdkVersion getMaxJdkVersion() {
+        return maxJdkVersion;
+    }
 
-        public void onFinish() throws Exception {
-        }
+    public void setUsesClasses(String[] usesClasses) {
+        this.usesClasses = usesClasses;
+    }
+
+    public void setOnInvalidJdkVersionListener(OnJdkVersionListener onInvalidJdkVersionListener) {
+        this.onInvalidJdkVersionListener = onInvalidJdkVersionListener;
+    }
+
+    public void setOnClassReferenceListener(OnClassReferenceListener onClassReferenceListener) {
+        this.onClassReferenceListener = onClassReferenceListener;
+    }
+
+    public String[] getUsesClasses() {
+        return usesClasses;
+    }
+
+    public boolean getSuccess() {
+        return success;
     }
 }

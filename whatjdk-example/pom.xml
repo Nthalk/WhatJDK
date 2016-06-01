@@ -17,7 +17,8 @@
                 <artifactId>whatjdk-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <configuration>
-                    <allowedJdkVersions>Java1.6</allowedJdkVersions>
+                    <maxJdkVersion>Java6</maxJdkVersion>
+                    <usesClasses>com.iodesystems.Silly</usesClasses>
                 </configuration>
                 <executions>
                     <execution>

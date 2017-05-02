@@ -35,6 +35,9 @@ public class Plugin extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         WhatJDK whatJDK = new WhatJDK();
 
+        // Don't bother testing poms!
+        if(project.getPackaging().equalsIgnoreCase("pom")) return;
+
         final File file = project.getArtifact().getFile();
         if (file == null) {
             throw new MojoExecutionException("Cannot verify before the package has been built");

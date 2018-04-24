@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+export GPG_TTY=$(tty)
+mvn -Prelease clean release:prepare release:perform
+

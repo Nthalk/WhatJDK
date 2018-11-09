@@ -1,33 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
+  <parent>
+    <groupId>com.iodesystems</groupId>
+    <artifactId>whatjdk-parent</artifactId>
+    <version>1.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>whatjdk-example</artifactId>
+
+  <build>
+    <plugins>
+      <plugin>
         <groupId>com.iodesystems</groupId>
-        <artifactId>whatjdk-parent</artifactId>
-        <version>1.0.7-SNAPSHOT</version>
-    </parent>
-
-    <artifactId>whatjdk-example</artifactId>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>com.iodesystems</groupId>
-                <artifactId>whatjdk-maven-plugin</artifactId>
-                <version>${project.version}</version>
-                <configuration>
-                    <maxJdkVersion>Java6</maxJdkVersion>
-                    <usesClasses>com.iodesystems.Silly</usesClasses>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+        <artifactId>whatjdk-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <configuration>
+          <maxJdkVersion>Java6</maxJdkVersion>
+          <usesClasses>com.iodesystems.Silly</usesClasses>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

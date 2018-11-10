@@ -50,7 +50,9 @@ public class Plugin extends AbstractMojo {
     List<String> jarFiles = new ArrayList<String>();
     jarFiles.add(file.getAbsolutePath());
     for (Artifact artifact : project.getDependencyArtifacts()) {
-      jarFiles.add(artifact.getFile().getAbsolutePath());
+      if ("compile".equalsIgnoreCase(artifact.getScope())) {
+        jarFiles.add(artifact.getFile().getAbsolutePath());
+      }
     }
 
     whatJDK.setJarFiles(jarFiles);

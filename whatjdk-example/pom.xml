@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.iodesystems</groupId>
     <artifactId>whatjdk-parent</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.1.1</version>
   </parent>
 
   <artifactId>whatjdk-example</artifactId>

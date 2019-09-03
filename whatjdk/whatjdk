@@ -1,17 +1,4 @@
 #!/usr/bin/env bash
-
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do
-  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-
-cd $DIR
-
-if [ ! -e target/whatjdk.jar ]; then
-    mvn package
-fi
-
-java -jar target/whatjdk.jar "$@"
+set -e
+DIR="$(cd "$(dirname ${BASH_SOURCE[0]})" && pwd)"
+java -jar ${DIR}/target/whatjdk.jar "$@"

@@ -62,9 +62,9 @@ public class WhatJDK {
     whatJDK.setMaxJdkVersion(JdkVersion.parse(opts.get("--max-jdk")));
     whatJDK.setUsesClasses(parseUsesClass(opts.get("--uses-class")));
     if (whatJDK.execute()) {
-      System.exit(-1);
-    } else {
       System.exit(0);
+    } else {
+      System.exit(-1);
     }
 
   }

@@ -85,6 +85,13 @@ class WhatJDKClassVisitor extends ClassVisitor {
     return classes;
   }
 
+  @Override
+  public void visitNestHost(String nestHost) {
+  }
+  @Override
+  public void visitNestMember(String nestHost) {
+  }
+
   public void check(ClassEntry classEntry) {
     this.classEntry = classEntry;
     classEntry.getClassReader().accept(this, 0);

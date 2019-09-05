@@ -22,7 +22,7 @@
 
   <groupId>com.iodesystems</groupId>
   <artifactId>whatjdk-parent</artifactId>
-  <version>1.1.3-SNAPSHOT</version>
+  <version>1.1.3</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -39,7 +39,7 @@
     <connection>scm:git:git@github.com:Nthalk/whatjdk.git</connection>
     <developerConnection>scm:git:git@github.com:Nthalk/whatjdk.git</developerConnection>
     <url>http://iodesystems.github.io/whatjdk/</url>
-    <tag>HEAD</tag>
+    <tag>whatjdk-parent-1.1.3</tag>
   </scm>
 
   <profiles>

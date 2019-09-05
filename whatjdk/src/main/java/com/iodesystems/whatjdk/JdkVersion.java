@@ -2,9 +2,9 @@ package com.iodesystems.whatjdk;
 
 public class JdkVersion {
 
-  public static final JdkVersion J2SE_11 = new JdkVersion("Java11", 56, 12);
-  public static final JdkVersion J2SE_10 = new JdkVersion("Java10", 55, 11);
-  public static final JdkVersion J2SE_9 = new JdkVersion("Java9", 54, 10);
+  public static final JdkVersion J2SE_11 = new JdkVersion("Java11", 55, 12);
+  public static final JdkVersion J2SE_10 = new JdkVersion("Java10", 54, 11);
+  public static final JdkVersion J2SE_9 = new JdkVersion("Java9", 53, 10);
   public static final JdkVersion J2SE_8 = new JdkVersion("Java8", 52, 9);
   public static final JdkVersion J2SE_7 = new JdkVersion("Java7", 51, 8);
   public static final JdkVersion J2SE_6_0 = new JdkVersion("Java6", 50, 7);

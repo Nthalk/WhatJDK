@@ -8,6 +8,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.ModuleVisitor;
 
 class WhatJDKClassVisitor extends ClassVisitor {
 
@@ -86,8 +87,14 @@ class WhatJDKClassVisitor extends ClassVisitor {
   }
 
   @Override
+  public ModuleVisitor visitModule(String name, int access, String version) {
+    return null;
+  }
+
+  @Override
   public void visitNestHost(String nestHost) {
   }
+
   @Override
   public void visitNestMember(String nestHost) {
   }

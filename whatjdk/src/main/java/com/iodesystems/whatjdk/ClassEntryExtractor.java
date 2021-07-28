@@ -53,6 +53,13 @@ class ClassEntryExtractor implements Generator<ClassEntry> {
           if (next != null) {
             return next;
           }
+        }else if (scanInnerJarFiles && entry.getName().endsWith(".war")) {
+          delegate = new ClassEntryExtractor(fileName + ":" + entry.getName(),
+              new ZipInputStream(zipInputStream));
+          next = delegate.next();
+          if (next != null) {
+            return next;
+          }
         }
       }
 

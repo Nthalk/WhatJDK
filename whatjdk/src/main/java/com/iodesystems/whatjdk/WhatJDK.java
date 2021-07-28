@@ -6,6 +6,8 @@ import com.iodesystems.fn.logic.Condition;
 import com.iodesystems.whatjdk.listeners.OnClassReferenceListener;
 import com.iodesystems.whatjdk.listeners.OnJdkVersionListener;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.docopt.Docopt;
@@ -17,13 +19,14 @@ public class WhatJDK {
       "whatjdk\n"
           + "\n"
           + "Usage:\n"
-          + "  whatjdk [JARFILE...] [--max-jdk=jdk] [--uses-class=<class>]\n"
+          + "  whatjdk [JARFILE...] [--max-jdk=jdk] [--uses-class=<class>] [--deep=<boolean>]\n"
           + "  whatjdk (-h | --help)\n"
           + "  whatjdk (-v | --version)\n"
           + "\n"
           + "Options:\n"
           + "  --uses-class=<class>   Limit results to classes that reference this class.\n"
           + "  --max-jdk-=<jdk>       Limit results to classes that use this version.\n"
+          + "  --deep=<boolean>          Scann inner jars. [default:false]\n"
           + "  -h --help              Show this screen.\n"
           + "  -v --version           Show version.\n"
           + "\n";
@@ -31,12 +34,21 @@ public class WhatJDK {
   private List<String> jarFiles;
   private JdkVersion maxJdkVersion;
   private String[] usesClasses;
+
+
+  private Map<String, List<String>> jdkViolations = new HashMap<String, List<String>>();
+
   private OnJdkVersionListener onInvalidJdkVersionListener = new OnJdkVersionListener() {
     @Override
     public void onJdkVersion(ClassEntry classEntry, int version) {
-      System.out.println(
-          classEntry.getContainer() + ": " + classEntry.getFileName() + " is using java version: "
-              + JdkVersion.parse(version));
+      List<String> items = jdkViolations.get( classEntry.getContainer() );
+      if( items == null ){
+        items = new ArrayList<String>();
+        jdkViolations.put(classEntry.getContainer() , items );
+      }
+      String message  = classEntry.getFileName() + " is using java version: " + JdkVersion.parse(version);
+      items.add( ": " +  message );
+      System.out.println( classEntry.getContainer() + message );
     }
   };
 
@@ -59,14 +71,27 @@ public class WhatJDK {
     @SuppressWarnings("unchecked")
     List<String> jarfiles = (List<String>) opts.get("JARFILE");
     whatJDK.setJarFiles(jarfiles);
+    whatJDK.setScanInnerJarFiles( Boolean.parseBoolean( (String)opts.getOrDefault("--deep", "false" ) ) );
     whatJDK.setMaxJdkVersion(JdkVersion.parse(opts.get("--max-jdk")));
     whatJDK.setUsesClasses(parseUsesClass(opts.get("--uses-class")));
     if (whatJDK.execute()) {
       System.exit(0);
     } else {
+      whatJDK.dumpResults();
       System.exit(-1);
     }
 
+  }
+
+  private void dumpResults() {
+    if( !jdkViolations.isEmpty() ){
+      System.err.println( "JDK Violations found in modules:");
+      for( String module : jdkViolations.keySet() ){
+        System.err.println( " +" + module );
+      }
+    }else{
+      System.err.println( "No JDK Violations found");
+    }
   }
 
   public static String[] parseUsesClass(Object o) {
